@@ -1,0 +1,60 @@
+name: Sanitize Dependabot Gradle Wrapper PR
+description: "Sanitizes and removes binary file changes when the gradle wrapper is updated."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout PR branch
+      if: >
+        github.event.pull_request.user.login == 'dependabot[bot]' &&
+        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper')
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: true
+
+    - name: Rewrite latest commit to only include gradle-wrapper.properties
+      if: >
+        github.event.pull_request.user.login == 'dependabot[bot]' &&
+        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper')
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        COMMITTER_NAME="Wilderforge Sanitizer"
+
+        # Use the latest commit (HEAD)
+        TARGET_COMMIT="HEAD"
+
+        # Capture original author and commit message from HEAD
+        OLD_AUTHOR="$(git show -s --format='%an <%ae>' "$TARGET_COMMIT")"
+        OLD_MSG="$(git show -s --format=%B "$TARGET_COMMIT")"
+
+        # Append the sanitizer tag to the commit message
+        NEW_MSG="$OLD_MSG (Sanitized by $COMMITTER_NAME)"
+
+        # Checkout HEAD explicitly (probably redundant, but safe)
+        git checkout "$TARGET_COMMIT"
+
+        # Amend the commit to empty it
+        git commit --amend --no-edit --allow-empty
+
+        # Remove all files from index
+        git reset HEAD^
+
+        # Stage all gradle-wrapper.properties files anywhere in the repo
+        git add ':(glob)**/gradle-wrapper.properties'
+
+        # Fail if nothing was staged
+        if [ -z "$(git diff --cached --name-only)" ]; then
+          echo "No gradle-wrapper.properties files found to stage. Aborting."
+          exit 1
+        fi
+
+        # Create a new commit with preserved author and message, overridden committer
+        GIT_COMMITTER_NAME="$COMMITTER_NAME" \
+        GIT_COMMITTER_EMAIL="<>" \
+        git commit --author="$OLD_AUTHOR" -m "$NEW_MSG"
+
+        # Push rewritten history
+        git push --force-with-lease
