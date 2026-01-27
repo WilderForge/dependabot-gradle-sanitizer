@@ -7,14 +7,14 @@ inputs:
     required: true
 
   committer_name:
-    description: "Optional committer name"
+    description: "Optional committer name (defaults to PAT owner)"
     required: false
-    default: "Wilderforge Sanitizer"
+    default: ""
 
   committer_email:
-    description: "Optional committer email"
+    description: "Optional committer email (defaults to PAT owner @users.noreply.github.com"
     required: false
-    default: "<>"
+    default: ""
 
 runs:
   using: "composite"
@@ -36,10 +36,38 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-
-        echo "Using inputs or defaults for committer"
+        echo "Resolving committer identity"
+        
+        if [ -z "${{ inputs.committer_name }}" ] || [ -z "${{ inputs.committer_email }}" ]; then
+          echo "Querying GitHub API for token owner"
+        
+          GH_USER_JSON="$(curl -sSf \
+            -H "Authorization: Bearer ${{ inputs.access_token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/user)"
+        
+          GH_LOGIN="$(echo "$GH_USER_JSON" | jq -r .login)"
+        
+          if [ "$GH_LOGIN" = "null" ] || [ -z "$GH_LOGIN" ]; then
+            echo "Failed to determine token owner"
+            exit 1
+          fi
+        fi
+        
         COMMITTER_NAME="${{ inputs.committer_name }}"
         COMMITTER_EMAIL="${{ inputs.committer_email }}"
+        
+        if [ -z "$COMMITTER_NAME" ]; then
+          COMMITTER_NAME="$GH_LOGIN"
+        fi
+        
+        if [ -z "$COMMITTER_EMAIL" ]; then
+          COMMITTER_EMAIL="$GH_LOGIN@users.noreply.github.com"
+        fi
+        
+        echo "Using committer:"
+        echo "  Name:  $COMMITTER_NAME"
+        echo "  Email: $COMMITTER_EMAIL"
 
         echo "Targeting latest commit (HEAD)"
         TARGET_COMMIT="HEAD"
