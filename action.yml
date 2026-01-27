@@ -31,44 +31,47 @@ runs:
       run: |
         set -euo pipefail
 
-        # Use inputs or defaults
+        echo "Using inputs or defaults for committer"
         COMMITTER_NAME="${{ inputs.committer_name }}"
         COMMITTER_EMAIL="${{ inputs.committer_email }}"
 
-        # Use the latest commit (HEAD)
+        echo "Targeting latest commit (HEAD)"
         TARGET_COMMIT="HEAD"
 
-        # Capture original author and commit message from HEAD
+        echo "Capturing original author and commit message"
         OLD_AUTHOR="$(git show -s --format='%an <%ae>' "$TARGET_COMMIT")"
         OLD_MSG="$(git show -s --format=%B "$TARGET_COMMIT")"
 
-        # Append the sanitizer tag to the commit message
+        echo "Appending sanitizer tag to commit message"
         NEW_MSG="$OLD_MSG (Sanitized by $COMMITTER_NAME)"
 
-        # Checkout HEAD explicitly (probably redundant, but safe)
+        echo "Checking out HEAD"
         git checkout "$TARGET_COMMIT"
 
-        # Amend the commit to empty it
-        git commit --amend --no-edit --allow-empty
+        echo "Amending commit to empty it"
+        git -c user.name="$COMMITTER_NAME" \
+            -c user.email="$COMMITTER_EMAIL" \
+            commit --amend --no-edit --allow-empty
 
-        # Remove all files from index
+        echo "Removing all files from index"
         git reset HEAD^
 
-        # Stage all gradle-wrapper.properties files anywhere in the repo
+        echo "Staging all gradle-wrapper.properties files"
         git add ':(glob)**/gradle-wrapper.properties'
 
-        # Fail if nothing was staged
         if [ -z "$(git diff --cached --name-only)" ]; then
           echo "No gradle-wrapper.properties files found to stage. Aborting."
           exit 1
         fi
 
-        # Create a new commit with preserved author and message, overridden committer
+        echo "Creating new commit with preserved author and overridden committer"
         git -c user.name="$COMMITTER_NAME" \
-        -c user.email="$COMMITTER_EMAIL" \
-        commit --author="$OLD_AUTHOR" -m "$NEW_MSG"
+            -c user.email="$COMMITTER_EMAIL" \
+            commit --author="$OLD_AUTHOR" -m "$NEW_MSG"
 
-        # Push rewritten history safely
+        echo "Pushing rewritten history"
         git -c user.name="$COMMITTER_NAME" \
-        -c user.email="$COMMITTER_EMAIL" \
-        push --force
+            -c user.email="$COMMITTER_EMAIL" \
+            push --force-with-lease
+
+        echo "Sanitize workflow completed successfully"
