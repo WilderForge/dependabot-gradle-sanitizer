@@ -2,10 +2,15 @@ name: Sanitize Dependabot Gradle Wrapper PR
 description: "Sanitizes and removes binary file changes when the gradle wrapper is updated."
 
 inputs:
+  access_token:
+    description: "GitHub access token with contents:write permission"
+    required: true
+
   committer_name:
     description: "Optional committer name"
     required: false
     default: "Wilderforge Sanitizer"
+
   committer_email:
     description: "Optional committer email"
     required: false
@@ -21,7 +26,8 @@ runs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        persist-credentials: true
+        token: ${{ inputs.access_token }}
+        persist-credentials: false
 
     - name: Rewrite latest commit to only include gradle-wrapper.properties
       if: >
