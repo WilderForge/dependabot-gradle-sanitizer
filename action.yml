@@ -69,9 +69,10 @@ runs:
             -c user.email="$COMMITTER_EMAIL" \
             commit --author="$OLD_AUTHOR" -m "$NEW_MSG"
 
-        echo "Pushing rewritten history"
+        echo "Pushing rewritten history to PR branch"
         git -c user.name="$COMMITTER_NAME" \
             -c user.email="$COMMITTER_EMAIL" \
-            push --force-with-lease
+            push --force-with-lease origin HEAD:"$GITHUB_HEAD_REF"
+
 
         echo "Sanitize workflow completed successfully"
