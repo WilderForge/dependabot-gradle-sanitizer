@@ -69,4 +69,6 @@ runs:
         git commit --author="$OLD_AUTHOR" -m "$NEW_MSG"
 
         # Push rewritten history safely
-        git push --force-with-lease
+        git -c user.name="$COMMITTER_NAME" \
+        -c user.email="$COMMITTER_EMAIL" \
+        push --force
