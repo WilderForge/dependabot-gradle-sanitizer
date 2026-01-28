@@ -23,7 +23,7 @@ runs:
       if: >
         github.event.pull_request.user.login == 'dependabot[bot]' &&
         startsWith(github.event.pull_request.title, 'Bump gradle-wrapper') &&
-        github.event.pull_request.head.user.login == 'dependabot[bot]'
+        github.event.pull_request.head.user.name == 'dependabot[bot]'
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -34,7 +34,7 @@ runs:
       if: >
         github.event.pull_request.user.login == 'dependabot[bot]' &&
         startsWith(github.event.pull_request.title, 'Bump gradle-wrapper') &&
-        github.event.pull_request.head.user.login == 'dependabot[bot]'
+        github.event.pull_request.head.user.name == 'dependabot[bot]'
       shell: bash
       run: |
         set -euo pipefail
