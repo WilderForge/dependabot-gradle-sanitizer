@@ -107,7 +107,7 @@ runs:
         git -c user.name="$COMMITTER_NAME" \
             -c user.email="$COMMITTER_EMAIL" \
             -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${{ inputs.access_token }}" | base64 -w0)" \
-            push --force
+            push --force origin HEAD:"$GITHUB_HEAD_REF"
 
 
         echo "Sanitize workflow completed successfully"
