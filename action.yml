@@ -22,7 +22,8 @@ runs:
     - name: Checkout PR branch
       if: >
         github.event.pull_request.user.login == 'dependabot[bot]' &&
-        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper')
+        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper') &&
+        github.event.pull_request.head.user.login == 'dependabot[bot]'
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -32,7 +33,8 @@ runs:
     - name: Rewrite latest commit to only include gradle-wrapper.properties
       if: >
         github.event.pull_request.user.login == 'dependabot[bot]' &&
-        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper')
+        startsWith(github.event.pull_request.title, 'Bump gradle-wrapper') &&
+        github.event.pull_request.head.user.login == 'dependabot[bot]'
       shell: bash
       run: |
         set -euo pipefail
